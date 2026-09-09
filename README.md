@@ -128,4 +128,3 @@ uv run pytest test_main.py -v
 - `test_stats_after_submission` — статистика после одной отправки (подсчёт непустых)
 - `test_stats_multiple_submissions` — статистика после нескольких отправок
 - `test_serve_frontend` — проверка раздачи фронтенда
-# ai-for-developer-course

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Мини-анкета — Мои домашние питомцы</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [questions, setQuestions] = useState([]);
+      const [answers, setAnswers] = useState({});
+      const [stats, setStats] = useState({ total_submissions: 0, non_empty_answers: 0 });
+      const [popup, setPopup] = useState(null); // { type: 'success' | 'error', message: string }
+      const [loading, setLoading] = useState(true);
+
+      // Загрузка вопросов при монтировании
+      useEffect(() => {
+        fetch('/questions')
+          .then((res) => res.json())
+          .then((data) => {
+            setQuestions(data);
+            // Инициализируем пустые ответы по каждому вопросу
+            const initial = {};
+            data.forEach((q) => { initial[q.id] = ''; });
+            setAnswers(initial);
+            setLoading(false);
+          })
+          .catch(() => {
+            setPopup({ type: 'error', message: 'Ошибка загрузки вопросов' });
+            setLoading(false);
+          });
+      }, []);
+
+      // Обновление статистики каждые 15 секунд
+      useEffect(() => {
+        const interval = setInterval(() => {
+          fetch('/answers/stats')
+            .then((res) => res.json())
+            .then((data) => setStats(data))
+            .catch(() => {});
+        }, 15000);
+        // Загружаем статистику сразу при старте
+        fetch('/answers/stats')
+          .then((res) => res.json())
+          .then((data) => setStats(data))
+          .catch(() => {});
+        return () => clearInterval(interval);
+      }, []);
+
+      const handleChange = (questionId, value) => {
+        setAnswers((prev) => ({ ...prev, [questionId]: value }));
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const payload = {
+            answers: questions.map((q) => ({
+              question_id: q.id,
+              answer: answers[q.id] || '',
+            })),
+          };
+          await fetch('/answers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          setPopup({ type: 'success', message: 'Спасибо!' });
+          // Очищаем форму
+          const initial = {};
+          questions.forEach((q) => { initial[q.id] = ''; });
+          setAnswers(initial);
+        } catch {
+          setPopup({ type: 'error', message: 'Ошибка отправки' });
+        }
+      };
+
+      if (loading) return <div className="container"><p>Загрузка...</p></div>;
+
+      return (
+        <div className="container">
+          <h1>Мои домашние питомцы</h1>
+
+          {/* Статистика */}
+          <div className="stats">
+            <div className="stat-item">
+              <span className="stat-label">Всего анкет:</span>
+              <span className="stat-value">{stats.total_submissions}</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-label">Заполнено ответов:</span>
+              <span className="stat-value">{stats.non_empty_answers}</span>
+            </div>
+          </div>
+
+          {/* Форма */}
+          <form onSubmit={handleSubmit}>
+            {questions.map((q) => (
+              <div key={q.id} className="question-group">
+                <label htmlFor={`q-${q.id}`}>{q.question}</label>
+                <textarea
+                  id={`q-${q.id}`}
+                  rows={3}
+                  value={answers[q.id] || ''}
+                  onChange={(e) => handleChange(q.id, e.target.value)}
+                  placeholder="Ваш ответ..."
+                />
+              </div>
+            ))}
+            <button type="submit" className="submit-btn">Отправить</button>
+          </form>
+
+          {/* Всплывающее уведомление */}
+          {popup && (
+            <div className={`popup popup-${popup.type}`}>
+              {popup.message}
+              <button onClick={() => setPopup(null)}>✕</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

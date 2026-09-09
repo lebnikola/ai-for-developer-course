@@ -1,0 +1,11 @@
+[project]
+name = "mini-survey"
+version = "0.1.0"
+description = "Мини-анкета — домашнее задание"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pytest",
+    "httpx",
+]
