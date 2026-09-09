@@ -46,10 +46,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh   # Linux / macOS
 # 1. Клонируйте репозиторий
 cd ai-for-dev/homework1
 
-# 2. Создайте виртуальное окружение и установите зависимости
+# 2. Создайте виртуальное окружение
 uv venv
-source .venv/bin/activate
-uv pip install -r /dev/null   # зависимости из pyproject.toml
 
 # 3. Запустите сервер
 uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
